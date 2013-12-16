@@ -1,0 +1,4 @@
+cassandrathrift
+===============
+
+Cassandra Thrift Service
