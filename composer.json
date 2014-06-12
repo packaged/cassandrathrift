@@ -1,7 +1,7 @@
 {
   "name":              "packaged/cassandrathrift",
   "description":       "Cassandra Thrift Wrapper",
-  "version":           "19.36.0",
+  "version":           "20.1.0",
   "keywords":          ["cassandra", "thrift"],
   "homepage":          "http://wiki.apache.org/cassandra/API10",
   "license":           "BSD-3-Clause",
