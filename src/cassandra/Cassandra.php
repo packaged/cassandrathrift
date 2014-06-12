@@ -35,6 +35,7 @@ interface CassandraIf {
   public function batch_mutate($mutation_map, $consistency_level);
   public function atomic_batch_mutate($mutation_map, $consistency_level);
   public function truncate($cfname);
+  public function get_multi_slice(\cassandra\MultiSliceRequest $request);
   public function describe_schema_versions();
   public function describe_keyspaces();
   public function describe_cluster_name();
@@ -1160,6 +1161,66 @@ class CassandraClient implements \cassandra\CassandraIf {
       throw $result->te;
     }
     return;
+  }
+
+  public function get_multi_slice(\cassandra\MultiSliceRequest $request)
+  {
+    $this->send_get_multi_slice($request);
+    return $this->recv_get_multi_slice();
+  }
+
+  public function send_get_multi_slice(\cassandra\MultiSliceRequest $request)
+  {
+    $args = new \cassandra\Cassandra_get_multi_slice_args();
+    $args->request = $request;
+    $bin_accel = ($this->output_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'get_multi_slice', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('get_multi_slice', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_get_multi_slice()
+  {
+    $bin_accel = ($this->input_ instanceof TBinaryProtocolAccelerated) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, '\cassandra\Cassandra_get_multi_slice_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new \cassandra\Cassandra_get_multi_slice_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    if ($result->success !== null) {
+      return $result->success;
+    }
+    if ($result->ire !== null) {
+      throw $result->ire;
+    }
+    if ($result->ue !== null) {
+      throw $result->ue;
+    }
+    if ($result->te !== null) {
+      throw $result->te;
+    }
+    throw new \Exception("get_multi_slice failed: unknown result");
   }
 
   public function describe_schema_versions()
@@ -3433,15 +3494,15 @@ class Cassandra_get_slice_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size191 = 0;
-            $_etype194 = 0;
-            $xfer += $input->readListBegin($_etype194, $_size191);
-            for ($_i195 = 0; $_i195 < $_size191; ++$_i195)
+            $_size198 = 0;
+            $_etype201 = 0;
+            $xfer += $input->readListBegin($_etype201, $_size198);
+            for ($_i202 = 0; $_i202 < $_size198; ++$_i202)
             {
-              $elem196 = null;
-              $elem196 = new \cassandra\ColumnOrSuperColumn();
-              $xfer += $elem196->read($input);
-              $this->success []= $elem196;
+              $elem203 = null;
+              $elem203 = new \cassandra\ColumnOrSuperColumn();
+              $xfer += $elem203->read($input);
+              $this->success []= $elem203;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -3493,9 +3554,9 @@ class Cassandra_get_slice_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter197)
+          foreach ($this->success as $iter204)
           {
-            $xfer += $iter197->write($output);
+            $xfer += $iter204->write($output);
           }
         }
         $output->writeListEnd();
@@ -3877,14 +3938,14 @@ class Cassandra_multiget_slice_args {
         case 1:
           if ($ftype == TType::LST) {
             $this->keys = array();
-            $_size198 = 0;
-            $_etype201 = 0;
-            $xfer += $input->readListBegin($_etype201, $_size198);
-            for ($_i202 = 0; $_i202 < $_size198; ++$_i202)
+            $_size205 = 0;
+            $_etype208 = 0;
+            $xfer += $input->readListBegin($_etype208, $_size205);
+            for ($_i209 = 0; $_i209 < $_size205; ++$_i209)
             {
-              $elem203 = null;
-              $xfer += $input->readString($elem203);
-              $this->keys []= $elem203;
+              $elem210 = null;
+              $xfer += $input->readString($elem210);
+              $this->keys []= $elem210;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -3935,9 +3996,9 @@ class Cassandra_multiget_slice_args {
       {
         $output->writeListBegin(TType::STRING, count($this->keys));
         {
-          foreach ($this->keys as $iter204)
+          foreach ($this->keys as $iter211)
           {
-            $xfer += $output->writeString($iter204);
+            $xfer += $output->writeString($iter211);
           }
         }
         $output->writeListEnd();
@@ -4055,28 +4116,28 @@ class Cassandra_multiget_slice_result {
         case 0:
           if ($ftype == TType::MAP) {
             $this->success = array();
-            $_size205 = 0;
-            $_ktype206 = 0;
-            $_vtype207 = 0;
-            $xfer += $input->readMapBegin($_ktype206, $_vtype207, $_size205);
-            for ($_i209 = 0; $_i209 < $_size205; ++$_i209)
+            $_size212 = 0;
+            $_ktype213 = 0;
+            $_vtype214 = 0;
+            $xfer += $input->readMapBegin($_ktype213, $_vtype214, $_size212);
+            for ($_i216 = 0; $_i216 < $_size212; ++$_i216)
             {
-              $key210 = '';
-              $val211 = array();
-              $xfer += $input->readString($key210);
-              $val211 = array();
-              $_size212 = 0;
-              $_etype215 = 0;
-              $xfer += $input->readListBegin($_etype215, $_size212);
-              for ($_i216 = 0; $_i216 < $_size212; ++$_i216)
+              $key217 = '';
+              $val218 = array();
+              $xfer += $input->readString($key217);
+              $val218 = array();
+              $_size219 = 0;
+              $_etype222 = 0;
+              $xfer += $input->readListBegin($_etype222, $_size219);
+              for ($_i223 = 0; $_i223 < $_size219; ++$_i223)
               {
-                $elem217 = null;
-                $elem217 = new \cassandra\ColumnOrSuperColumn();
-                $xfer += $elem217->read($input);
-                $val211 []= $elem217;
+                $elem224 = null;
+                $elem224 = new \cassandra\ColumnOrSuperColumn();
+                $xfer += $elem224->read($input);
+                $val218 []= $elem224;
               }
               $xfer += $input->readListEnd();
-              $this->success[$key210] = $val211;
+              $this->success[$key217] = $val218;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4128,15 +4189,15 @@ class Cassandra_multiget_slice_result {
       {
         $output->writeMapBegin(TType::STRING, TType::LST, count($this->success));
         {
-          foreach ($this->success as $kiter218 => $viter219)
+          foreach ($this->success as $kiter225 => $viter226)
           {
-            $xfer += $output->writeString($kiter218);
+            $xfer += $output->writeString($kiter225);
             {
-              $output->writeListBegin(TType::STRUCT, count($viter219));
+              $output->writeListBegin(TType::STRUCT, count($viter226));
               {
-                foreach ($viter219 as $iter220)
+                foreach ($viter226 as $iter227)
                 {
-                  $xfer += $iter220->write($output);
+                  $xfer += $iter227->write($output);
                 }
               }
               $output->writeListEnd();
@@ -4242,14 +4303,14 @@ class Cassandra_multiget_count_args {
         case 1:
           if ($ftype == TType::LST) {
             $this->keys = array();
-            $_size221 = 0;
-            $_etype224 = 0;
-            $xfer += $input->readListBegin($_etype224, $_size221);
-            for ($_i225 = 0; $_i225 < $_size221; ++$_i225)
+            $_size228 = 0;
+            $_etype231 = 0;
+            $xfer += $input->readListBegin($_etype231, $_size228);
+            for ($_i232 = 0; $_i232 < $_size228; ++$_i232)
             {
-              $elem226 = null;
-              $xfer += $input->readString($elem226);
-              $this->keys []= $elem226;
+              $elem233 = null;
+              $xfer += $input->readString($elem233);
+              $this->keys []= $elem233;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4300,9 +4361,9 @@ class Cassandra_multiget_count_args {
       {
         $output->writeListBegin(TType::STRING, count($this->keys));
         {
-          foreach ($this->keys as $iter227)
+          foreach ($this->keys as $iter234)
           {
-            $xfer += $output->writeString($iter227);
+            $xfer += $output->writeString($iter234);
           }
         }
         $output->writeListEnd();
@@ -4415,17 +4476,17 @@ class Cassandra_multiget_count_result {
         case 0:
           if ($ftype == TType::MAP) {
             $this->success = array();
-            $_size228 = 0;
-            $_ktype229 = 0;
-            $_vtype230 = 0;
-            $xfer += $input->readMapBegin($_ktype229, $_vtype230, $_size228);
-            for ($_i232 = 0; $_i232 < $_size228; ++$_i232)
+            $_size235 = 0;
+            $_ktype236 = 0;
+            $_vtype237 = 0;
+            $xfer += $input->readMapBegin($_ktype236, $_vtype237, $_size235);
+            for ($_i239 = 0; $_i239 < $_size235; ++$_i239)
             {
-              $key233 = '';
-              $val234 = 0;
-              $xfer += $input->readString($key233);
-              $xfer += $input->readI32($val234);
-              $this->success[$key233] = $val234;
+              $key240 = '';
+              $val241 = 0;
+              $xfer += $input->readString($key240);
+              $xfer += $input->readI32($val241);
+              $this->success[$key240] = $val241;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -4477,10 +4538,10 @@ class Cassandra_multiget_count_result {
       {
         $output->writeMapBegin(TType::STRING, TType::I32, count($this->success));
         {
-          foreach ($this->success as $kiter235 => $viter236)
+          foreach ($this->success as $kiter242 => $viter243)
           {
-            $xfer += $output->writeString($kiter235);
-            $xfer += $output->writeI32($viter236);
+            $xfer += $output->writeString($kiter242);
+            $xfer += $output->writeI32($viter243);
           }
         }
         $output->writeMapEnd();
@@ -4731,15 +4792,15 @@ class Cassandra_get_range_slices_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size237 = 0;
-            $_etype240 = 0;
-            $xfer += $input->readListBegin($_etype240, $_size237);
-            for ($_i241 = 0; $_i241 < $_size237; ++$_i241)
+            $_size244 = 0;
+            $_etype247 = 0;
+            $xfer += $input->readListBegin($_etype247, $_size244);
+            for ($_i248 = 0; $_i248 < $_size244; ++$_i248)
             {
-              $elem242 = null;
-              $elem242 = new \cassandra\KeySlice();
-              $xfer += $elem242->read($input);
-              $this->success []= $elem242;
+              $elem249 = null;
+              $elem249 = new \cassandra\KeySlice();
+              $xfer += $elem249->read($input);
+              $this->success []= $elem249;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -4791,9 +4852,9 @@ class Cassandra_get_range_slices_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter243)
+          foreach ($this->success as $iter250)
           {
-            $xfer += $iter243->write($output);
+            $xfer += $iter250->write($output);
           }
         }
         $output->writeListEnd();
@@ -5034,15 +5095,15 @@ class Cassandra_get_paged_slice_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size244 = 0;
-            $_etype247 = 0;
-            $xfer += $input->readListBegin($_etype247, $_size244);
-            for ($_i248 = 0; $_i248 < $_size244; ++$_i248)
+            $_size251 = 0;
+            $_etype254 = 0;
+            $xfer += $input->readListBegin($_etype254, $_size251);
+            for ($_i255 = 0; $_i255 < $_size251; ++$_i255)
             {
-              $elem249 = null;
-              $elem249 = new \cassandra\KeySlice();
-              $xfer += $elem249->read($input);
-              $this->success []= $elem249;
+              $elem256 = null;
+              $elem256 = new \cassandra\KeySlice();
+              $xfer += $elem256->read($input);
+              $this->success []= $elem256;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -5094,9 +5155,9 @@ class Cassandra_get_paged_slice_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter250)
+          foreach ($this->success as $iter257)
           {
-            $xfer += $iter250->write($output);
+            $xfer += $iter257->write($output);
           }
         }
         $output->writeListEnd();
@@ -5347,15 +5408,15 @@ class Cassandra_get_indexed_slices_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size251 = 0;
-            $_etype254 = 0;
-            $xfer += $input->readListBegin($_etype254, $_size251);
-            for ($_i255 = 0; $_i255 < $_size251; ++$_i255)
+            $_size258 = 0;
+            $_etype261 = 0;
+            $xfer += $input->readListBegin($_etype261, $_size258);
+            for ($_i262 = 0; $_i262 < $_size258; ++$_i262)
             {
-              $elem256 = null;
-              $elem256 = new \cassandra\KeySlice();
-              $xfer += $elem256->read($input);
-              $this->success []= $elem256;
+              $elem263 = null;
+              $elem263 = new \cassandra\KeySlice();
+              $xfer += $elem263->read($input);
+              $this->success []= $elem263;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -5407,9 +5468,9 @@ class Cassandra_get_indexed_slices_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter257)
+          foreach ($this->success as $iter264)
           {
-            $xfer += $iter257->write($output);
+            $xfer += $iter264->write($output);
           }
         }
         $output->writeListEnd();
@@ -6065,15 +6126,15 @@ class Cassandra_cas_args {
         case 3:
           if ($ftype == TType::LST) {
             $this->expected = array();
-            $_size258 = 0;
-            $_etype261 = 0;
-            $xfer += $input->readListBegin($_etype261, $_size258);
-            for ($_i262 = 0; $_i262 < $_size258; ++$_i262)
+            $_size265 = 0;
+            $_etype268 = 0;
+            $xfer += $input->readListBegin($_etype268, $_size265);
+            for ($_i269 = 0; $_i269 < $_size265; ++$_i269)
             {
-              $elem263 = null;
-              $elem263 = new \cassandra\Column();
-              $xfer += $elem263->read($input);
-              $this->expected []= $elem263;
+              $elem270 = null;
+              $elem270 = new \cassandra\Column();
+              $xfer += $elem270->read($input);
+              $this->expected []= $elem270;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -6083,15 +6144,15 @@ class Cassandra_cas_args {
         case 4:
           if ($ftype == TType::LST) {
             $this->updates = array();
-            $_size264 = 0;
-            $_etype267 = 0;
-            $xfer += $input->readListBegin($_etype267, $_size264);
-            for ($_i268 = 0; $_i268 < $_size264; ++$_i268)
+            $_size271 = 0;
+            $_etype274 = 0;
+            $xfer += $input->readListBegin($_etype274, $_size271);
+            for ($_i275 = 0; $_i275 < $_size271; ++$_i275)
             {
-              $elem269 = null;
-              $elem269 = new \cassandra\Column();
-              $xfer += $elem269->read($input);
-              $this->updates []= $elem269;
+              $elem276 = null;
+              $elem276 = new \cassandra\Column();
+              $xfer += $elem276->read($input);
+              $this->updates []= $elem276;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -6143,9 +6204,9 @@ class Cassandra_cas_args {
       {
         $output->writeListBegin(TType::STRUCT, count($this->expected));
         {
-          foreach ($this->expected as $iter270)
+          foreach ($this->expected as $iter277)
           {
-            $xfer += $iter270->write($output);
+            $xfer += $iter277->write($output);
           }
         }
         $output->writeListEnd();
@@ -6160,9 +6221,9 @@ class Cassandra_cas_args {
       {
         $output->writeListBegin(TType::STRUCT, count($this->updates));
         {
-          foreach ($this->updates as $iter271)
+          foreach ($this->updates as $iter278)
           {
-            $xfer += $iter271->write($output);
+            $xfer += $iter278->write($output);
           }
         }
         $output->writeListEnd();
@@ -6891,41 +6952,41 @@ class Cassandra_batch_mutate_args {
         case 1:
           if ($ftype == TType::MAP) {
             $this->mutation_map = array();
-            $_size272 = 0;
-            $_ktype273 = 0;
-            $_vtype274 = 0;
-            $xfer += $input->readMapBegin($_ktype273, $_vtype274, $_size272);
-            for ($_i276 = 0; $_i276 < $_size272; ++$_i276)
+            $_size279 = 0;
+            $_ktype280 = 0;
+            $_vtype281 = 0;
+            $xfer += $input->readMapBegin($_ktype280, $_vtype281, $_size279);
+            for ($_i283 = 0; $_i283 < $_size279; ++$_i283)
             {
-              $key277 = '';
-              $val278 = array();
-              $xfer += $input->readString($key277);
-              $val278 = array();
-              $_size279 = 0;
-              $_ktype280 = 0;
-              $_vtype281 = 0;
-              $xfer += $input->readMapBegin($_ktype280, $_vtype281, $_size279);
-              for ($_i283 = 0; $_i283 < $_size279; ++$_i283)
+              $key284 = '';
+              $val285 = array();
+              $xfer += $input->readString($key284);
+              $val285 = array();
+              $_size286 = 0;
+              $_ktype287 = 0;
+              $_vtype288 = 0;
+              $xfer += $input->readMapBegin($_ktype287, $_vtype288, $_size286);
+              for ($_i290 = 0; $_i290 < $_size286; ++$_i290)
               {
-                $key284 = '';
-                $val285 = array();
-                $xfer += $input->readString($key284);
-                $val285 = array();
-                $_size286 = 0;
-                $_etype289 = 0;
-                $xfer += $input->readListBegin($_etype289, $_size286);
-                for ($_i290 = 0; $_i290 < $_size286; ++$_i290)
+                $key291 = '';
+                $val292 = array();
+                $xfer += $input->readString($key291);
+                $val292 = array();
+                $_size293 = 0;
+                $_etype296 = 0;
+                $xfer += $input->readListBegin($_etype296, $_size293);
+                for ($_i297 = 0; $_i297 < $_size293; ++$_i297)
                 {
-                  $elem291 = null;
-                  $elem291 = new \cassandra\Mutation();
-                  $xfer += $elem291->read($input);
-                  $val285 []= $elem291;
+                  $elem298 = null;
+                  $elem298 = new \cassandra\Mutation();
+                  $xfer += $elem298->read($input);
+                  $val292 []= $elem298;
                 }
                 $xfer += $input->readListEnd();
-                $val278[$key284] = $val285;
+                $val285[$key291] = $val292;
               }
               $xfer += $input->readMapEnd();
-              $this->mutation_map[$key277] = $val278;
+              $this->mutation_map[$key284] = $val285;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -6960,21 +7021,21 @@ class Cassandra_batch_mutate_args {
       {
         $output->writeMapBegin(TType::STRING, TType::MAP, count($this->mutation_map));
         {
-          foreach ($this->mutation_map as $kiter292 => $viter293)
+          foreach ($this->mutation_map as $kiter299 => $viter300)
           {
-            $xfer += $output->writeString($kiter292);
+            $xfer += $output->writeString($kiter299);
             {
-              $output->writeMapBegin(TType::STRING, TType::LST, count($viter293));
+              $output->writeMapBegin(TType::STRING, TType::LST, count($viter300));
               {
-                foreach ($viter293 as $kiter294 => $viter295)
+                foreach ($viter300 as $kiter301 => $viter302)
                 {
-                  $xfer += $output->writeString($kiter294);
+                  $xfer += $output->writeString($kiter301);
                   {
-                    $output->writeListBegin(TType::STRUCT, count($viter295));
+                    $output->writeListBegin(TType::STRUCT, count($viter302));
                     {
-                      foreach ($viter295 as $iter296)
+                      foreach ($viter302 as $iter303)
                       {
-                        $xfer += $iter296->write($output);
+                        $xfer += $iter303->write($output);
                       }
                     }
                     $output->writeListEnd();
@@ -7191,41 +7252,41 @@ class Cassandra_atomic_batch_mutate_args {
         case 1:
           if ($ftype == TType::MAP) {
             $this->mutation_map = array();
-            $_size297 = 0;
-            $_ktype298 = 0;
-            $_vtype299 = 0;
-            $xfer += $input->readMapBegin($_ktype298, $_vtype299, $_size297);
-            for ($_i301 = 0; $_i301 < $_size297; ++$_i301)
+            $_size304 = 0;
+            $_ktype305 = 0;
+            $_vtype306 = 0;
+            $xfer += $input->readMapBegin($_ktype305, $_vtype306, $_size304);
+            for ($_i308 = 0; $_i308 < $_size304; ++$_i308)
             {
-              $key302 = '';
-              $val303 = array();
-              $xfer += $input->readString($key302);
-              $val303 = array();
-              $_size304 = 0;
-              $_ktype305 = 0;
-              $_vtype306 = 0;
-              $xfer += $input->readMapBegin($_ktype305, $_vtype306, $_size304);
-              for ($_i308 = 0; $_i308 < $_size304; ++$_i308)
+              $key309 = '';
+              $val310 = array();
+              $xfer += $input->readString($key309);
+              $val310 = array();
+              $_size311 = 0;
+              $_ktype312 = 0;
+              $_vtype313 = 0;
+              $xfer += $input->readMapBegin($_ktype312, $_vtype313, $_size311);
+              for ($_i315 = 0; $_i315 < $_size311; ++$_i315)
               {
-                $key309 = '';
-                $val310 = array();
-                $xfer += $input->readString($key309);
-                $val310 = array();
-                $_size311 = 0;
-                $_etype314 = 0;
-                $xfer += $input->readListBegin($_etype314, $_size311);
-                for ($_i315 = 0; $_i315 < $_size311; ++$_i315)
+                $key316 = '';
+                $val317 = array();
+                $xfer += $input->readString($key316);
+                $val317 = array();
+                $_size318 = 0;
+                $_etype321 = 0;
+                $xfer += $input->readListBegin($_etype321, $_size318);
+                for ($_i322 = 0; $_i322 < $_size318; ++$_i322)
                 {
-                  $elem316 = null;
-                  $elem316 = new \cassandra\Mutation();
-                  $xfer += $elem316->read($input);
-                  $val310 []= $elem316;
+                  $elem323 = null;
+                  $elem323 = new \cassandra\Mutation();
+                  $xfer += $elem323->read($input);
+                  $val317 []= $elem323;
                 }
                 $xfer += $input->readListEnd();
-                $val303[$key309] = $val310;
+                $val310[$key316] = $val317;
               }
               $xfer += $input->readMapEnd();
-              $this->mutation_map[$key302] = $val303;
+              $this->mutation_map[$key309] = $val310;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -7260,21 +7321,21 @@ class Cassandra_atomic_batch_mutate_args {
       {
         $output->writeMapBegin(TType::STRING, TType::MAP, count($this->mutation_map));
         {
-          foreach ($this->mutation_map as $kiter317 => $viter318)
+          foreach ($this->mutation_map as $kiter324 => $viter325)
           {
-            $xfer += $output->writeString($kiter317);
+            $xfer += $output->writeString($kiter324);
             {
-              $output->writeMapBegin(TType::STRING, TType::LST, count($viter318));
+              $output->writeMapBegin(TType::STRING, TType::LST, count($viter325));
               {
-                foreach ($viter318 as $kiter319 => $viter320)
+                foreach ($viter325 as $kiter326 => $viter327)
                 {
-                  $xfer += $output->writeString($kiter319);
+                  $xfer += $output->writeString($kiter326);
                   {
-                    $output->writeListBegin(TType::STRUCT, count($viter320));
+                    $output->writeListBegin(TType::STRUCT, count($viter327));
                     {
-                      foreach ($viter320 as $iter321)
+                      foreach ($viter327 as $iter328)
                       {
-                        $xfer += $iter321->write($output);
+                        $xfer += $iter328->write($output);
                       }
                     }
                     $output->writeListEnd();
@@ -7609,6 +7670,249 @@ class Cassandra_truncate_result {
 
 }
 
+class Cassandra_get_multi_slice_args {
+  static $_TSPEC;
+
+  public $request = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'request',
+          'type' => TType::STRUCT,
+          'class' => '\cassandra\MultiSliceRequest',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['request'])) {
+        $this->request = $vals['request'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'Cassandra_get_multi_slice_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->request = new \cassandra\MultiSliceRequest();
+            $xfer += $this->request->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('Cassandra_get_multi_slice_args');
+    if ($this->request !== null) {
+      if (!is_object($this->request)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('request', TType::STRUCT, 1);
+      $xfer += $this->request->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class Cassandra_get_multi_slice_result {
+  static $_TSPEC;
+
+  public $success = null;
+  public $ire = null;
+  public $ue = null;
+  public $te = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        0 => array(
+          'var' => 'success',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\cassandra\ColumnOrSuperColumn',
+            ),
+          ),
+        1 => array(
+          'var' => 'ire',
+          'type' => TType::STRUCT,
+          'class' => '\cassandra\InvalidRequestException',
+          ),
+        2 => array(
+          'var' => 'ue',
+          'type' => TType::STRUCT,
+          'class' => '\cassandra\UnavailableException',
+          ),
+        3 => array(
+          'var' => 'te',
+          'type' => TType::STRUCT,
+          'class' => '\cassandra\TimedOutException',
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['success'])) {
+        $this->success = $vals['success'];
+      }
+      if (isset($vals['ire'])) {
+        $this->ire = $vals['ire'];
+      }
+      if (isset($vals['ue'])) {
+        $this->ue = $vals['ue'];
+      }
+      if (isset($vals['te'])) {
+        $this->te = $vals['te'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'Cassandra_get_multi_slice_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 0:
+          if ($ftype == TType::LST) {
+            $this->success = array();
+            $_size329 = 0;
+            $_etype332 = 0;
+            $xfer += $input->readListBegin($_etype332, $_size329);
+            for ($_i333 = 0; $_i333 < $_size329; ++$_i333)
+            {
+              $elem334 = null;
+              $elem334 = new \cassandra\ColumnOrSuperColumn();
+              $xfer += $elem334->read($input);
+              $this->success []= $elem334;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 1:
+          if ($ftype == TType::STRUCT) {
+            $this->ire = new \cassandra\InvalidRequestException();
+            $xfer += $this->ire->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->ue = new \cassandra\UnavailableException();
+            $xfer += $this->ue->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::STRUCT) {
+            $this->te = new \cassandra\TimedOutException();
+            $xfer += $this->te->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('Cassandra_get_multi_slice_result');
+    if ($this->success !== null) {
+      if (!is_array($this->success)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('success', TType::LST, 0);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->success));
+        {
+          foreach ($this->success as $iter335)
+          {
+            $xfer += $iter335->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->ire !== null) {
+      $xfer += $output->writeFieldBegin('ire', TType::STRUCT, 1);
+      $xfer += $this->ire->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->ue !== null) {
+      $xfer += $output->writeFieldBegin('ue', TType::STRUCT, 2);
+      $xfer += $this->ue->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->te !== null) {
+      $xfer += $output->writeFieldBegin('te', TType::STRUCT, 3);
+      $xfer += $this->te->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
 class Cassandra_describe_schema_versions_args {
   static $_TSPEC;
 
@@ -7723,27 +8027,27 @@ class Cassandra_describe_schema_versions_result {
         case 0:
           if ($ftype == TType::MAP) {
             $this->success = array();
-            $_size322 = 0;
-            $_ktype323 = 0;
-            $_vtype324 = 0;
-            $xfer += $input->readMapBegin($_ktype323, $_vtype324, $_size322);
-            for ($_i326 = 0; $_i326 < $_size322; ++$_i326)
+            $_size336 = 0;
+            $_ktype337 = 0;
+            $_vtype338 = 0;
+            $xfer += $input->readMapBegin($_ktype337, $_vtype338, $_size336);
+            for ($_i340 = 0; $_i340 < $_size336; ++$_i340)
             {
-              $key327 = '';
-              $val328 = array();
-              $xfer += $input->readString($key327);
-              $val328 = array();
-              $_size329 = 0;
-              $_etype332 = 0;
-              $xfer += $input->readListBegin($_etype332, $_size329);
-              for ($_i333 = 0; $_i333 < $_size329; ++$_i333)
+              $key341 = '';
+              $val342 = array();
+              $xfer += $input->readString($key341);
+              $val342 = array();
+              $_size343 = 0;
+              $_etype346 = 0;
+              $xfer += $input->readListBegin($_etype346, $_size343);
+              for ($_i347 = 0; $_i347 < $_size343; ++$_i347)
               {
-                $elem334 = null;
-                $xfer += $input->readString($elem334);
-                $val328 []= $elem334;
+                $elem348 = null;
+                $xfer += $input->readString($elem348);
+                $val342 []= $elem348;
               }
               $xfer += $input->readListEnd();
-              $this->success[$key327] = $val328;
+              $this->success[$key341] = $val342;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -7779,15 +8083,15 @@ class Cassandra_describe_schema_versions_result {
       {
         $output->writeMapBegin(TType::STRING, TType::LST, count($this->success));
         {
-          foreach ($this->success as $kiter335 => $viter336)
+          foreach ($this->success as $kiter349 => $viter350)
           {
-            $xfer += $output->writeString($kiter335);
+            $xfer += $output->writeString($kiter349);
             {
-              $output->writeListBegin(TType::STRING, count($viter336));
+              $output->writeListBegin(TType::STRING, count($viter350));
               {
-                foreach ($viter336 as $iter337)
+                foreach ($viter350 as $iter351)
                 {
-                  $xfer += $output->writeString($iter337);
+                  $xfer += $output->writeString($iter351);
                 }
               }
               $output->writeListEnd();
@@ -7917,15 +8221,15 @@ class Cassandra_describe_keyspaces_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size338 = 0;
-            $_etype341 = 0;
-            $xfer += $input->readListBegin($_etype341, $_size338);
-            for ($_i342 = 0; $_i342 < $_size338; ++$_i342)
+            $_size352 = 0;
+            $_etype355 = 0;
+            $xfer += $input->readListBegin($_etype355, $_size352);
+            for ($_i356 = 0; $_i356 < $_size352; ++$_i356)
             {
-              $elem343 = null;
-              $elem343 = new \cassandra\KsDef();
-              $xfer += $elem343->read($input);
-              $this->success []= $elem343;
+              $elem357 = null;
+              $elem357 = new \cassandra\KsDef();
+              $xfer += $elem357->read($input);
+              $this->success []= $elem357;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -7961,9 +8265,9 @@ class Cassandra_describe_keyspaces_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter344)
+          foreach ($this->success as $iter358)
           {
-            $xfer += $iter344->write($output);
+            $xfer += $iter358->write($output);
           }
         }
         $output->writeListEnd();
@@ -8355,15 +8659,15 @@ class Cassandra_describe_ring_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size345 = 0;
-            $_etype348 = 0;
-            $xfer += $input->readListBegin($_etype348, $_size345);
-            for ($_i349 = 0; $_i349 < $_size345; ++$_i349)
+            $_size359 = 0;
+            $_etype362 = 0;
+            $xfer += $input->readListBegin($_etype362, $_size359);
+            for ($_i363 = 0; $_i363 < $_size359; ++$_i363)
             {
-              $elem350 = null;
-              $elem350 = new \cassandra\TokenRange();
-              $xfer += $elem350->read($input);
-              $this->success []= $elem350;
+              $elem364 = null;
+              $elem364 = new \cassandra\TokenRange();
+              $xfer += $elem364->read($input);
+              $this->success []= $elem364;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -8399,9 +8703,9 @@ class Cassandra_describe_ring_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter351)
+          foreach ($this->success as $iter365)
           {
-            $xfer += $iter351->write($output);
+            $xfer += $iter365->write($output);
           }
         }
         $output->writeListEnd();
@@ -8549,15 +8853,15 @@ class Cassandra_describe_local_ring_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size352 = 0;
-            $_etype355 = 0;
-            $xfer += $input->readListBegin($_etype355, $_size352);
-            for ($_i356 = 0; $_i356 < $_size352; ++$_i356)
+            $_size366 = 0;
+            $_etype369 = 0;
+            $xfer += $input->readListBegin($_etype369, $_size366);
+            for ($_i370 = 0; $_i370 < $_size366; ++$_i370)
             {
-              $elem357 = null;
-              $elem357 = new \cassandra\TokenRange();
-              $xfer += $elem357->read($input);
-              $this->success []= $elem357;
+              $elem371 = null;
+              $elem371 = new \cassandra\TokenRange();
+              $xfer += $elem371->read($input);
+              $this->success []= $elem371;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -8593,9 +8897,9 @@ class Cassandra_describe_local_ring_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter358)
+          foreach ($this->success as $iter372)
           {
-            $xfer += $iter358->write($output);
+            $xfer += $iter372->write($output);
           }
         }
         $output->writeListEnd();
@@ -8724,17 +9028,17 @@ class Cassandra_describe_token_map_result {
         case 0:
           if ($ftype == TType::MAP) {
             $this->success = array();
-            $_size359 = 0;
-            $_ktype360 = 0;
-            $_vtype361 = 0;
-            $xfer += $input->readMapBegin($_ktype360, $_vtype361, $_size359);
-            for ($_i363 = 0; $_i363 < $_size359; ++$_i363)
+            $_size373 = 0;
+            $_ktype374 = 0;
+            $_vtype375 = 0;
+            $xfer += $input->readMapBegin($_ktype374, $_vtype375, $_size373);
+            for ($_i377 = 0; $_i377 < $_size373; ++$_i377)
             {
-              $key364 = '';
-              $val365 = '';
-              $xfer += $input->readString($key364);
-              $xfer += $input->readString($val365);
-              $this->success[$key364] = $val365;
+              $key378 = '';
+              $val379 = '';
+              $xfer += $input->readString($key378);
+              $xfer += $input->readString($val379);
+              $this->success[$key378] = $val379;
             }
             $xfer += $input->readMapEnd();
           } else {
@@ -8770,10 +9074,10 @@ class Cassandra_describe_token_map_result {
       {
         $output->writeMapBegin(TType::STRING, TType::STRING, count($this->success));
         {
-          foreach ($this->success as $kiter366 => $viter367)
+          foreach ($this->success as $kiter380 => $viter381)
           {
-            $xfer += $output->writeString($kiter366);
-            $xfer += $output->writeString($viter367);
+            $xfer += $output->writeString($kiter380);
+            $xfer += $output->writeString($viter381);
           }
         }
         $output->writeMapEnd();
@@ -9417,14 +9721,14 @@ class Cassandra_describe_splits_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size368 = 0;
-            $_etype371 = 0;
-            $xfer += $input->readListBegin($_etype371, $_size368);
-            for ($_i372 = 0; $_i372 < $_size368; ++$_i372)
+            $_size382 = 0;
+            $_etype385 = 0;
+            $xfer += $input->readListBegin($_etype385, $_size382);
+            for ($_i386 = 0; $_i386 < $_size382; ++$_i386)
             {
-              $elem373 = null;
-              $xfer += $input->readString($elem373);
-              $this->success []= $elem373;
+              $elem387 = null;
+              $xfer += $input->readString($elem387);
+              $this->success []= $elem387;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -9460,9 +9764,9 @@ class Cassandra_describe_splits_result {
       {
         $output->writeListBegin(TType::STRING, count($this->success));
         {
-          foreach ($this->success as $iter374)
+          foreach ($this->success as $iter388)
           {
-            $xfer += $output->writeString($iter374);
+            $xfer += $output->writeString($iter388);
           }
         }
         $output->writeListEnd();
@@ -9792,15 +10096,15 @@ class Cassandra_describe_splits_ex_result {
         case 0:
           if ($ftype == TType::LST) {
             $this->success = array();
-            $_size375 = 0;
-            $_etype378 = 0;
-            $xfer += $input->readListBegin($_etype378, $_size375);
-            for ($_i379 = 0; $_i379 < $_size375; ++$_i379)
+            $_size389 = 0;
+            $_etype392 = 0;
+            $xfer += $input->readListBegin($_etype392, $_size389);
+            for ($_i393 = 0; $_i393 < $_size389; ++$_i393)
             {
-              $elem380 = null;
-              $elem380 = new \cassandra\CfSplit();
-              $xfer += $elem380->read($input);
-              $this->success []= $elem380;
+              $elem394 = null;
+              $elem394 = new \cassandra\CfSplit();
+              $xfer += $elem394->read($input);
+              $this->success []= $elem394;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -9836,9 +10140,9 @@ class Cassandra_describe_splits_ex_result {
       {
         $output->writeListBegin(TType::STRUCT, count($this->success));
         {
-          foreach ($this->success as $iter381)
+          foreach ($this->success as $iter395)
           {
-            $xfer += $iter381->write($output);
+            $xfer += $iter395->write($output);
           }
         }
         $output->writeListEnd();
@@ -11983,14 +12287,14 @@ class Cassandra_execute_prepared_cql_query_args {
         case 2:
           if ($ftype == TType::LST) {
             $this->values = array();
-            $_size382 = 0;
-            $_etype385 = 0;
-            $xfer += $input->readListBegin($_etype385, $_size382);
-            for ($_i386 = 0; $_i386 < $_size382; ++$_i386)
+            $_size396 = 0;
+            $_etype399 = 0;
+            $xfer += $input->readListBegin($_etype399, $_size396);
+            for ($_i400 = 0; $_i400 < $_size396; ++$_i400)
             {
-              $elem387 = null;
-              $xfer += $input->readString($elem387);
-              $this->values []= $elem387;
+              $elem401 = null;
+              $xfer += $input->readString($elem401);
+              $this->values []= $elem401;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -12023,9 +12327,9 @@ class Cassandra_execute_prepared_cql_query_args {
       {
         $output->writeListBegin(TType::STRING, count($this->values));
         {
-          foreach ($this->values as $iter388)
+          foreach ($this->values as $iter402)
           {
-            $xfer += $output->writeString($iter388);
+            $xfer += $output->writeString($iter402);
           }
         }
         $output->writeListEnd();
@@ -12274,14 +12578,14 @@ class Cassandra_execute_prepared_cql3_query_args {
         case 2:
           if ($ftype == TType::LST) {
             $this->values = array();
-            $_size389 = 0;
-            $_etype392 = 0;
-            $xfer += $input->readListBegin($_etype392, $_size389);
-            for ($_i393 = 0; $_i393 < $_size389; ++$_i393)
+            $_size403 = 0;
+            $_etype406 = 0;
+            $xfer += $input->readListBegin($_etype406, $_size403);
+            for ($_i407 = 0; $_i407 < $_size403; ++$_i407)
             {
-              $elem394 = null;
-              $xfer += $input->readString($elem394);
-              $this->values []= $elem394;
+              $elem408 = null;
+              $xfer += $input->readString($elem408);
+              $this->values []= $elem408;
             }
             $xfer += $input->readListEnd();
           } else {
@@ -12321,9 +12625,9 @@ class Cassandra_execute_prepared_cql3_query_args {
       {
         $output->writeListBegin(TType::STRING, count($this->values));
         {
-          foreach ($this->values as $iter395)
+          foreach ($this->values as $iter409)
           {
-            $xfer += $output->writeString($iter395);
+            $xfer += $output->writeString($iter409);
           }
         }
         $output->writeListEnd();

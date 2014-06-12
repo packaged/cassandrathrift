@@ -3432,13 +3432,13 @@ class CfDef {
   public $bloom_filter_fp_chance = null;
   public $caching = "keys_only";
   public $dclocal_read_repair_chance = 0;
-  public $populate_io_cache_on_flush = null;
   public $memtable_flush_period_in_ms = null;
   public $default_time_to_live = null;
-  public $index_interval = null;
   public $speculative_retry = "NONE";
   public $triggers = null;
   public $cells_per_row_to_cache = "100";
+  public $min_index_interval = null;
+  public $max_index_interval = null;
   public $row_cache_size = null;
   public $key_cache_size = null;
   public $row_cache_save_period_in_seconds = null;
@@ -3450,6 +3450,8 @@ class CfDef {
   public $merge_shards_chance = null;
   public $row_cache_provider = null;
   public $row_cache_keys_to_save = null;
+  public $populate_io_cache_on_flush = null;
+  public $index_interval = null;
 
   public function __construct($vals=null) {
     if (!isset(self::$_TSPEC)) {
@@ -3559,20 +3561,12 @@ class CfDef {
           'var' => 'dclocal_read_repair_chance',
           'type' => TType::DOUBLE,
           ),
-        38 => array(
-          'var' => 'populate_io_cache_on_flush',
-          'type' => TType::BOOL,
-          ),
         39 => array(
           'var' => 'memtable_flush_period_in_ms',
           'type' => TType::I32,
           ),
         40 => array(
           'var' => 'default_time_to_live',
-          'type' => TType::I32,
-          ),
-        41 => array(
-          'var' => 'index_interval',
           'type' => TType::I32,
           ),
         42 => array(
@@ -3591,6 +3585,14 @@ class CfDef {
         44 => array(
           'var' => 'cells_per_row_to_cache',
           'type' => TType::STRING,
+          ),
+        45 => array(
+          'var' => 'min_index_interval',
+          'type' => TType::I32,
+          ),
+        46 => array(
+          'var' => 'max_index_interval',
+          'type' => TType::I32,
           ),
         9 => array(
           'var' => 'row_cache_size',
@@ -3634,6 +3636,14 @@ class CfDef {
           ),
         31 => array(
           'var' => 'row_cache_keys_to_save',
+          'type' => TType::I32,
+          ),
+        38 => array(
+          'var' => 'populate_io_cache_on_flush',
+          'type' => TType::BOOL,
+          ),
+        41 => array(
+          'var' => 'index_interval',
           'type' => TType::I32,
           ),
         );
@@ -3702,17 +3712,11 @@ class CfDef {
       if (isset($vals['dclocal_read_repair_chance'])) {
         $this->dclocal_read_repair_chance = $vals['dclocal_read_repair_chance'];
       }
-      if (isset($vals['populate_io_cache_on_flush'])) {
-        $this->populate_io_cache_on_flush = $vals['populate_io_cache_on_flush'];
-      }
       if (isset($vals['memtable_flush_period_in_ms'])) {
         $this->memtable_flush_period_in_ms = $vals['memtable_flush_period_in_ms'];
       }
       if (isset($vals['default_time_to_live'])) {
         $this->default_time_to_live = $vals['default_time_to_live'];
-      }
-      if (isset($vals['index_interval'])) {
-        $this->index_interval = $vals['index_interval'];
       }
       if (isset($vals['speculative_retry'])) {
         $this->speculative_retry = $vals['speculative_retry'];
@@ -3722,6 +3726,12 @@ class CfDef {
       }
       if (isset($vals['cells_per_row_to_cache'])) {
         $this->cells_per_row_to_cache = $vals['cells_per_row_to_cache'];
+      }
+      if (isset($vals['min_index_interval'])) {
+        $this->min_index_interval = $vals['min_index_interval'];
+      }
+      if (isset($vals['max_index_interval'])) {
+        $this->max_index_interval = $vals['max_index_interval'];
       }
       if (isset($vals['row_cache_size'])) {
         $this->row_cache_size = $vals['row_cache_size'];
@@ -3755,6 +3765,12 @@ class CfDef {
       }
       if (isset($vals['row_cache_keys_to_save'])) {
         $this->row_cache_keys_to_save = $vals['row_cache_keys_to_save'];
+      }
+      if (isset($vals['populate_io_cache_on_flush'])) {
+        $this->populate_io_cache_on_flush = $vals['populate_io_cache_on_flush'];
+      }
+      if (isset($vals['index_interval'])) {
+        $this->index_interval = $vals['index_interval'];
       }
     }
   }
@@ -3962,13 +3978,6 @@ class CfDef {
             $xfer += $input->skip($ftype);
           }
           break;
-        case 38:
-          if ($ftype == TType::BOOL) {
-            $xfer += $input->readBool($this->populate_io_cache_on_flush);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
         case 39:
           if ($ftype == TType::I32) {
             $xfer += $input->readI32($this->memtable_flush_period_in_ms);
@@ -3979,13 +3988,6 @@ class CfDef {
         case 40:
           if ($ftype == TType::I32) {
             $xfer += $input->readI32($this->default_time_to_live);
-          } else {
-            $xfer += $input->skip($ftype);
-          }
-          break;
-        case 41:
-          if ($ftype == TType::I32) {
-            $xfer += $input->readI32($this->index_interval);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -4018,6 +4020,20 @@ class CfDef {
         case 44:
           if ($ftype == TType::STRING) {
             $xfer += $input->readString($this->cells_per_row_to_cache);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 45:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->min_index_interval);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 46:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->max_index_interval);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -4095,6 +4111,20 @@ class CfDef {
         case 31:
           if ($ftype == TType::I32) {
             $xfer += $input->readI32($this->row_cache_keys_to_save);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 38:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->populate_io_cache_on_flush);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 41:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->index_interval);
           } else {
             $xfer += $input->skip($ftype);
           }
@@ -4355,6 +4385,16 @@ class CfDef {
     if ($this->cells_per_row_to_cache !== null) {
       $xfer += $output->writeFieldBegin('cells_per_row_to_cache', TType::STRING, 44);
       $xfer += $output->writeString($this->cells_per_row_to_cache);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->min_index_interval !== null) {
+      $xfer += $output->writeFieldBegin('min_index_interval', TType::I32, 45);
+      $xfer += $output->writeI32($this->min_index_interval);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->max_index_interval !== null) {
+      $xfer += $output->writeFieldBegin('max_index_interval', TType::I32, 46);
+      $xfer += $output->writeI32($this->max_index_interval);
       $xfer += $output->writeFieldEnd();
     }
     $xfer += $output->writeFieldStop();
@@ -5379,6 +5419,303 @@ class CfSplit {
 
 }
 
-$GLOBALS['cassandra_CONSTANTS']['VERSION'] = "19.38.1";
+class ColumnSlice {
+  static $_TSPEC;
+
+  public $start = null;
+  public $finish = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'start',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'finish',
+          'type' => TType::STRING,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['start'])) {
+        $this->start = $vals['start'];
+      }
+      if (isset($vals['finish'])) {
+        $this->finish = $vals['finish'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'ColumnSlice';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->start);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->finish);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('ColumnSlice');
+    if ($this->start !== null) {
+      $xfer += $output->writeFieldBegin('start', TType::STRING, 1);
+      $xfer += $output->writeString($this->start);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->finish !== null) {
+      $xfer += $output->writeFieldBegin('finish', TType::STRING, 2);
+      $xfer += $output->writeString($this->finish);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class MultiSliceRequest {
+  static $_TSPEC;
+
+  public $key = null;
+  public $column_parent = null;
+  public $column_slices = null;
+  public $reversed = false;
+  public $count = 1000;
+  public $consistency_level =   1;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'key',
+          'type' => TType::STRING,
+          ),
+        2 => array(
+          'var' => 'column_parent',
+          'type' => TType::STRUCT,
+          'class' => '\cassandra\ColumnParent',
+          ),
+        3 => array(
+          'var' => 'column_slices',
+          'type' => TType::LST,
+          'etype' => TType::STRUCT,
+          'elem' => array(
+            'type' => TType::STRUCT,
+            'class' => '\cassandra\ColumnSlice',
+            ),
+          ),
+        4 => array(
+          'var' => 'reversed',
+          'type' => TType::BOOL,
+          ),
+        5 => array(
+          'var' => 'count',
+          'type' => TType::I32,
+          ),
+        6 => array(
+          'var' => 'consistency_level',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['key'])) {
+        $this->key = $vals['key'];
+      }
+      if (isset($vals['column_parent'])) {
+        $this->column_parent = $vals['column_parent'];
+      }
+      if (isset($vals['column_slices'])) {
+        $this->column_slices = $vals['column_slices'];
+      }
+      if (isset($vals['reversed'])) {
+        $this->reversed = $vals['reversed'];
+      }
+      if (isset($vals['count'])) {
+        $this->count = $vals['count'];
+      }
+      if (isset($vals['consistency_level'])) {
+        $this->consistency_level = $vals['consistency_level'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'MultiSliceRequest';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::STRING) {
+            $xfer += $input->readString($this->key);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 2:
+          if ($ftype == TType::STRUCT) {
+            $this->column_parent = new \cassandra\ColumnParent();
+            $xfer += $this->column_parent->read($input);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 3:
+          if ($ftype == TType::LST) {
+            $this->column_slices = array();
+            $_size191 = 0;
+            $_etype194 = 0;
+            $xfer += $input->readListBegin($_etype194, $_size191);
+            for ($_i195 = 0; $_i195 < $_size191; ++$_i195)
+            {
+              $elem196 = null;
+              $elem196 = new \cassandra\ColumnSlice();
+              $xfer += $elem196->read($input);
+              $this->column_slices []= $elem196;
+            }
+            $xfer += $input->readListEnd();
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 4:
+          if ($ftype == TType::BOOL) {
+            $xfer += $input->readBool($this->reversed);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 5:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->count);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        case 6:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->consistency_level);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('MultiSliceRequest');
+    if ($this->key !== null) {
+      $xfer += $output->writeFieldBegin('key', TType::STRING, 1);
+      $xfer += $output->writeString($this->key);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->column_parent !== null) {
+      if (!is_object($this->column_parent)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('column_parent', TType::STRUCT, 2);
+      $xfer += $this->column_parent->write($output);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->column_slices !== null) {
+      if (!is_array($this->column_slices)) {
+        throw new TProtocolException('Bad type in structure.', TProtocolException::INVALID_DATA);
+      }
+      $xfer += $output->writeFieldBegin('column_slices', TType::LST, 3);
+      {
+        $output->writeListBegin(TType::STRUCT, count($this->column_slices));
+        {
+          foreach ($this->column_slices as $iter197)
+          {
+            $xfer += $iter197->write($output);
+          }
+        }
+        $output->writeListEnd();
+      }
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->reversed !== null) {
+      $xfer += $output->writeFieldBegin('reversed', TType::BOOL, 4);
+      $xfer += $output->writeBool($this->reversed);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->count !== null) {
+      $xfer += $output->writeFieldBegin('count', TType::I32, 5);
+      $xfer += $output->writeI32($this->count);
+      $xfer += $output->writeFieldEnd();
+    }
+    if ($this->consistency_level !== null) {
+      $xfer += $output->writeFieldBegin('consistency_level', TType::I32, 6);
+      $xfer += $output->writeI32($this->consistency_level);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+$GLOBALS['cassandra_CONSTANTS']['VERSION'] = "20.1.0";
 
 
