@@ -1,4 +1,4 @@
-git clone --depth=1 --branch=trunk git://git.apache.org/cassandra.git tmp
+git clone --depth=1 --branch=trunk git@github.com:apache/cassandra tmp
 cp tmp/interface/cassandra.thrift cassandra-thrift/
 rm -Rf tmp
 thrift --gen php cassandra-thrift/cassandra.thrift
