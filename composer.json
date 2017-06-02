@@ -9,7 +9,7 @@
   "license": "BSD-3-Clause",
   "require": {
     "php": ">=5.3.0",
-    "packaged/thrift": "~0.9"
+    "packaged/thrift": "0.9.2.1"
   },
   "autoload": {
     "classmap": ["src/cassandra"]
