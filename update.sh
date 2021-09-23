@@ -3,8 +3,8 @@
 TAG=$1
 
 if [[ "$TAG" == "" ]]; then
-  echo "no branch or tag specified"
-  exit 1
+	echo "no branch or tag specified"
+	exit 1
 fi
 
 git clone --depth=1 --branch=$TAG git@github.com:apache/cassandra tmp
