@@ -9,7 +9,7 @@
   "license": "BSD-3-Clause",
   "require": {
     "php": "^5.5 || ^7.0 || ^8.0",
-    "packaged/thrift": "^0.16.0"
+    "packaged/thrift": "^0.17.0"
   },
   "autoload": {
     "psr-4": {
